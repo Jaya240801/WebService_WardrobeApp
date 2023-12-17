@@ -35,11 +35,11 @@ router.post('/materialProduct', async (req, res) => {
     try {
         const { materialId, productId, satuan, jumlah } = req.body
         const data = await conn.execute(`INSERT INTO material_products VALUES(DEFAULT, ?,?,?,?)`, [materialId, productId, satuan, jumlah])
-        statusCode = 200, message = 'success'
+        statusCode = 200, message = "Berhasil membuat BoM baru!"
         if (data[0].affectedRows == 0) {
             res.status(500).json({
                 statusCode: 500,
-                message: 'failed'
+                message: "Gagal membuat BoM baru!"
             })
         } else {
             res.status(statusCode).json({
@@ -62,10 +62,10 @@ router.put('/materialProduct/:id', async (req, res) => {
         const id = req.params.id
         const data = await conn.execute(`UPDATE material_products SET material_id = ?, product_id = ?, satuan = ?,
         jumlah = ? WHERE material_products_id = ?`, [materialId, productId, satuan, jumlah, id])
-        statusCode = 200, message = 'success'
+        statusCode = 200, message = "Berhasil edit BoM dengan ID : " + id
         if (data[0].affectedRows == 0) {
             statusCode = 400,
-                message = 'failed'
+                message = "Gagal edit BoM dengan ID : " + id
         }
         res.status(statusCode).json({
             statusCode,
@@ -83,7 +83,7 @@ router.delete('/materialProduct/:id', async (req, res) => {
     try {
         const { id } = req.params
         const data = await conn.execute(`DELETE FROM material_products WHERE material_products_id = ?`, [id])
-        statusCode = 200, message = 'success'
+        statusCode = 200, message = "Berhasil hapus BoM dengan ID : " + id
         if (data[0].affectedRows > 0) {
             const tableName = 'material_products'
             const columnName = 'material_products_id'
@@ -93,14 +93,19 @@ router.delete('/materialProduct/:id', async (req, res) => {
             
             const resetQuery = `ALTER TABLE ${tableName} AUTO_INCREMENT = ${maxId}`;
             await conn.execute(resetQuery);
+
+            res.status(statusCode).json({
+                statusCode,
+                message
+            })
         } else {
             statusCode = 400;
-            message = 'failed';
+            message = "Gagal hapus BoM dengan ID : " + id;
+            res.status(statusCode).json({
+                statusCode,
+                message
+            })
         }
-        res.status(statusCode).json({
-            statusCode,
-            message
-        })
     } catch (e) {
         res.status(400).json({
             statusCode: 400,

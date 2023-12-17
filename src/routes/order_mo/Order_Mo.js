@@ -34,10 +34,10 @@ router.post('/ordermo', async (req, res) => {
     try {
         const { productId, quantity, total, statusMo, tanggal } = req.body
         const data = await conn.execute(`INSERT INTO order_mo VALUES(DEFAULT,?,?,?,?,?)`, [productId, quantity, total, statusMo, tanggal])
-        statusCode = 200, message = 'success'
+        statusCode = 200, message = "Berhasil membuat MO baru!"
         if (data[0].affectedRows == 0) {
             statusCode = 400,
-                message = 'failed'
+                message = "Gagal membuat MO baru!"
         }
 
         // update produk stock
@@ -45,11 +45,20 @@ router.post('/ordermo', async (req, res) => {
             const data = await conn.execute(`UPDATE products SET product_Stock=product_Stock+? WHERE product_id = ?`,
                 [quantity, productId]);
 
-            let statusCode = 200, message = 'success';
+            let statusCodeP = 200, messageP = "Berhasil menambah stok produk dengan ID : " + productId;
 
-            if (data[0] === 0) {
-                statusCode = 400;
-                message = 'failed';
+            if (data[0].affectedRows === 0) {
+                statusCodeP = 400;
+                messageP = "Gagal menambah stok produk dengan ID : " + productId;
+                res.status(statusCodeP).json({
+                    statusCodeP,
+                    messageP,
+                });
+            } else {
+                res.status(statusCodeP).json({
+                    statusCodeP,
+                    messageP,
+                });
             }
         }
 
@@ -72,10 +81,10 @@ router.put('/ordermo/:id', async (req, res) => {
         const id = req.params.id;
         const data = await conn.execute('UPDATE order_mo SET product_id = ?, quantity = ?, total = ?, status = ?, tanggal = ? WHERE orderMO_id = ?',
             [productId, quantity, total, statusMo, tanggal, id]);
-        let statusCode = 200, message = 'success';
+        let statusCode = 200, message = "Berhasil edit MO dengan ID : " + id;
         if (data[0].affectedRows === 0) {
             statusCode = 400;
-            message = 'failed';
+            message = "Gagal edit MO dengan ID : " + id;
         }
 
         // update produk stock
@@ -83,11 +92,20 @@ router.put('/ordermo/:id', async (req, res) => {
             const data = await conn.execute(`UPDATE products SET product_Stock=product_Stock+? WHERE product_id = ?`,
                 [quantity, productId]);
 
-            let statusCode = 200, message = 'success';
+            let statusCodeP = 200, messageP = "Berhasil menambah stok produk dengan ID : " + productId;
 
-            if (data[0] === 0) {
-                statusCode = 400;
-                message = 'failed';
+            if (data[0].affectedRows === 0) {
+                statusCodeP = 400;
+                messageP = "Gagal menambah stok produk dengan ID : " + productId;
+                res.status(statusCodeP).json({
+                    statusCodeP,
+                    messageP,
+                });
+            } else {
+                res.status(statusCodeP).json({
+                    statusCodeP,
+                    messageP,
+                });
             }
         }
 
@@ -109,7 +127,7 @@ router.delete('/ordermo/:id', async (req, res) => {
         const { id } = req.params;
         const data = await conn.execute('DELETE FROM order_mo WHERE orderMO_id = ?', [id]);
         let statusCode = 200;
-        let message = 'success';
+        let message = "Berhasil haous MO dengan ID : " + id;
         
         if (data[0].affectedRows > 0) {
             const tableName = 'order_mo';
@@ -121,17 +139,19 @@ router.delete('/ordermo/:id', async (req, res) => {
             
             const resetQuery = `ALTER TABLE ${tableName} AUTO_INCREMENT = ${maxId}`;
             await conn.execute(resetQuery);
+
+            res.status(statusCode).json({
+                statusCode,
+                message
+            });
         } else {
             statusCode = 400;
-            message = 'failed';
+            message = "Gagal haous MO dengan ID : " + id;
+            res.status(statusCode).json({
+                statusCode,
+                message
+            });
         }
-
-        console.log(data[0]);
-        res.status(statusCode).json({
-            statusCode,
-            message
-        });
-        
     } catch (e) {
         res.status(500).json({
             statusCode: 500,

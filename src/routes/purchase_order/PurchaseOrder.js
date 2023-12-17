@@ -1,5 +1,5 @@
 const express = require('express')
-const { mysqlDB, getConnection} = require('../../../db.js')
+const { mysqlDB, getConnection } = require('../../../db.js')
 const router = express.Router()
 
 router.post('/purchaseOrder', async (req, res) => {
@@ -7,23 +7,32 @@ router.post('/purchaseOrder', async (req, res) => {
     try {
         const { supplierId, materialId, quantityDemand, quantityReceive, total, tanggal, orderStatus, paymentStatus } = req.body
         const data = await conn.execute(`INSERT INTO purchase_orders VALUES(DEFAULT, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [supplierId, materialId, quantityDemand, quantityReceive, total, tanggal, orderStatus, paymentStatus])
-        statusCode = 200, message = 'success'
+            [supplierId, materialId, quantityDemand, quantityReceive, total, tanggal, orderStatus, paymentStatus])
+        statusCode = 200, message = "Berhasil membuat PO baru!"
         if (data[0].affectedRows == 0) {
             statusCode = 400,
-                message = 'failed'
+                message = "Gagal membuat PO baru!"
         }
 
         // update stock bahan baku
-        if(quantityReceive == quantityDemand && paymentStatus == "Fully Billed"){
+        if (quantityReceive == quantityDemand && paymentStatus == "Fully Billed") {
             const data = await conn.execute(`UPDATE materials SET quantity_in_Stock=quantity_in_Stock+? WHERE material_id = ?`,
                 [quantityReceive, materialId]);
 
-            let statusCode = 200, message = 'success';
+            let statusCodeM = 200, messageM = "Berhasil menambah stok bahan baku dengan ID : " + materialId;
 
-            if (data[0] === 0) {
-                statusCode = 400;
-                message = 'failed';
+            if (data[0].affectedRows === 0) {
+                statusCodeM = 400;
+                messageM = "Gagal menambah stok bahan baku dengan ID : " + materialId;
+                res.status(statusCodeM).json({
+                    statusCodeM,
+                    messageM,
+                });
+            } else {
+                res.status(statusCodeM).json({
+                    statusCodeM,
+                    messageM,
+                });
             }
         }
 
@@ -81,22 +90,31 @@ router.put('/purchaseOrder/:id', async (req, res) => {
         quantity_demand = ?, quantity_receive = ?, total = ?, tanggal = ?, order_status = ?,
         payment_status = ? WHERE orderPO_id = ?`, [supplierId, materialId, quantityDemand, quantityReceive,
             total, tanggal, orderStatus, paymentStatus, id])
-        statusCode = 200, message = 'success'
-        if (data.rowCount == 0) {
+        statusCode = 200, message = "Berhasil menambah stok bahan baku dengan ID : " + materialId
+        if (data[0].affectedRows == 0) {
             statusCode = 400,
-                message = 'failed'
+                message = "Gagal menambah stok bahan baku dengan ID : " + materialId
         }
 
         // update stock bahan baku
-        if(quantityReceive == quantityDemand && paymentStatus == "Fully Billed"){
+        if (quantityReceive == quantityDemand && paymentStatus == "Fully Billed") {
             const data = await conn.execute(`UPDATE materials SET quantity_in_Stock=quantity_in_Stock+? WHERE material_id = ?`,
                 [quantityReceive, materialId]);
 
-            let statusCode = 200, message = 'success';
+            let statusCodeM = 200, messageM = "Berhasil menambah stok bahan baku dengan ID : " + materialId;
 
-            if (data[0] === 0) {
-                statusCode = 400;
-                message = 'failed';
+            if (data[0].affectedRows === 0) {
+                statusCodeM = 400;
+                messageM = "Gagal menambah stok bahan baku dengan ID : " + materialId;
+                res.status(statusCodeM).json({
+                    statusCodeM,
+                    messageM,
+                });
+            } else {
+                res.status(statusCodeM).json({
+                    statusCodeM,
+                    messageM,
+                });
             }
         }
 
@@ -115,27 +133,32 @@ router.put('/purchaseOrder/:id', async (req, res) => {
 router.delete('/purchaseOrder/:id', async (req, res) => {
     const conn = await getConnection()
     try {
-        const {id} = req.params
+        const { id } = req.params
         const data = await conn.execute(`DELETE FROM purchase_orders WHERE orderPO_id = ?`, [id])
-        statusCode = 200, message = 'success'
-        if(data[0].affectedRows > 0) {
+        statusCode = 200, message = "Berhasil menghapus PO dengan ID : " + id
+        if (data[0].affectedRows > 0) {
             const tableName = 'purchase_orders'
             const columnName = 'orderPO_id'
             const maxIdQuery = `SELECT COALESCE(MAX(${columnName}), 0) + 1 AS max_id FROM ${tableName}`;
             const [maxIdData] = await conn.execute(maxIdQuery);
             const maxId = maxIdData[0].max_id;
-            
+
             const resetQuery = `ALTER TABLE ${tableName} AUTO_INCREMENT = ${maxId}`;
             await conn.execute(resetQuery);
+
+            res.status(statusCode).json({
+                statusCode,
+                message
+            })
         } else {
             statusCode = 400;
-            message = 'failed';
+            message = "Gagal menghapus PO dengan ID : " + id;
+            res.status(statusCode).json({
+                statusCode,
+                message
+            })
         }
-        res.status(statusCode).json({
-            statusCode,
-            message
-        })
-    } catch(e) {
+    } catch (e) {
         res.status(500).json({
             statusCode: 500,
             message: 'Have an error :' + e

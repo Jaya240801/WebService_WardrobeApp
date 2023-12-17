@@ -8,10 +8,10 @@ router.post('/material', async (req, res) => {
         const { materialName, supId, price, quantity } = req.body;
         const data = await conn.execute(`INSERT INTO materials VALUES(DEFAULT, ?, ?, ?, ?)`, [materialName, supId, price, quantity])
         const statusCode = 200; 
-        const message = 'success';
-        if (data.rowCount == 0) {
+        const message = "Berhasil membuat bahan baku baru!";
+        if (data[0].affectedRows == 0) {
             statusCode = 400;
-            message = 'failed';
+            message = 'Gagal membuat bahan baku baru!';
         }
         res.status(statusCode).json({
             statusCode,
@@ -47,7 +47,7 @@ router.get('/material', async (req, res) => {
     }
 })
 
-router.put('/material/:id', async (req, res) => {
+router.put('/material/:id?', async (req, res) => {
     try {
         const conn = await getConnection()
         const { materialName, supId, price, quantity } = req.body
@@ -55,15 +55,16 @@ router.put('/material/:id', async (req, res) => {
 
         const data = await conn.execute(`UPDATE materials SET material_name = ?, supplier_id = ?,
         price = ?, quantity_in_stock = ? WHERE material_id = ?`, [materialName, supId, price, quantity, id])
-        statuCode = 200, message = 'success'
-        if (data.rowCount == 0) {
+        statuCode = 200, message = "Berhasil edit bahan baku dengan ID : " + id
+        if (data[0].affectedRows == 0) {
             statuCode = 400,
-                message = 'failed'
+                message = 'Gagal Edit bahan baku!'
+        } else {
+            res.status(statuCode).json({
+                statuCode,
+                message
+            })
         }
-        res.status(statuCode).json({
-            statuCode,
-            message
-        })
     } catch (e) {
         res.status(400).json({
             statuCode: 400,
@@ -72,12 +73,12 @@ router.put('/material/:id', async (req, res) => {
     }
 })
 
-router.delete('/material/:id', async (req, res) => {
+router.delete('/material/:id?', async (req, res) => {
     try {
         const conn = await getConnection()
         const { id } = req.params
         const data = await conn.execute(`DELETE FROM materials WHERE material_id = ?`, [id])
-        statuCode = 200, message = 'success'
+        statuCode = 200, message = "Berhasil hapus bahan baku dengan ID : " + id
         if(data[0].affectedRows > 0) {
             const tableName = 'materials';
             const columnName = 'material_id';
@@ -87,14 +88,19 @@ router.delete('/material/:id', async (req, res) => {
             
             const resetQuery = `ALTER TABLE ${tableName} AUTO_INCREMENT = ${maxId}`;
             await conn.execute(resetQuery);
+
+            res.status(statuCode).json({
+                statuCode,
+                message
+            })
         } else {
             statusCode = 400;
-            message = 'failed';
+            message = 'Gagal hapus bahan baku dengan ID : ' + id;
+            res.status(statuCode).json({
+                statuCode,
+                message
+            })
         }
-        res.status(statuCode).json({
-            statuCode,
-            message
-        })
     } catch (e) {
         res.status(400).json({
             statuCode: 400,
